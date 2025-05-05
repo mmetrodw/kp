@@ -1,0 +1,317 @@
+body {
+	margin: 0;
+	padding: 0;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+.kp-wrapper {
+	position: relative;
+	width: 100%;
+	height: auto;
+
+	--lyrics-background: #06BCBA;
+	--lyrics-color: #252A34;
+
+	--player-color: #EAEAEA;
+	--cover-color: #191C24;
+	--buttons-color: #252A34;
+	--buttons-hover-color: #06BCBA;
+	--buttons-active-color: #06BCBA;
+	--seek-color: #252A34;
+	--buffered-color: red;
+	--progress-color: #06BCBA;
+	--time-color: #EAEAEA;
+
+	--playlist-background: #252A34;
+	--playlist-color: #EAEAEA;
+	--playlist-divider-color: #191C24;
+	--playlist-hover-background: #373c46;
+	--playlist-hover-color: #FFF;
+	--playlist-hover-divider-color: #191C24;
+	--playlist-active-background: #252A34;
+	--playlist-active-color: #06BCBA;
+	--playlist-active-divider-color: #191C24;
+
+	--playlist-scrollbar-track: green;
+	--playlist-scrollbar-thumb: blue;
+}
+
+.kp-wrapper * {
+	box-sizing: border-box;
+}
+
+.kp-lyrics-wrapper {
+	position: relative;
+	width: 100%;
+	height: 268px;
+	background: var(--lyrics-background);
+	overflow: hidden;
+}
+
+.kp-lyrics-container {
+	position: absolute;
+	width: 100%;
+	height: 268px;
+	top: 0;
+	left: 0;
+	padding-top: 48px;
+	text-align: center;
+	z-index: 1;
+	transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kp-lyrics-container:before,
+.kp-lyrics-container::after {
+	position: absolute;
+	content: '';
+	width: 100%;
+	height: 48px;
+	left: 0;
+	z-index: 2;
+}
+
+.kp-lyrics-container:before {
+	top: 0;
+	background: linear-gradient(180deg, color-mix(in oklab, var(--lyrics-background) 100%, transparent 0%) 0%, color-mix(in oklab, var(--lyrics-background) 0%, transparent 100%) 100%);
+}
+
+.kp-lyrics-container::after {
+	bottom: 0;
+	background: linear-gradient(0deg, color-mix(in oklab, var(--lyrics-background) 100%, transparent 0%) 0%, color-mix(in oklab, var(--lyrics-background) 0%, transparent 100%) 100%);
+}
+
+.kp-lyrics-line {
+	position: relative;
+	font-family: "Inter", sans-serif;
+	font-size: 24px;
+	font-weight: 700;
+	line-height: 28px;
+	color: var(--lyrics-color);
+	opacity: 0.5;
+	transition: all 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kp-lyrics-line.kp-current-lyrics-line {
+	opacity: 1;
+	transform: scale(1.25);
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+.kp-song-information {
+	position: absolute;
+	width: 100%;
+	height: 48px;
+	padding: 8px;
+	bottom: 0;
+	left: 0;
+	z-index: 3;
+}
+
+.kp-song-artist,
+.kp-song-title {
+	position: relative;
+	font-family: "Inter", sans-serif;
+	font-size: 12px;
+	line-height: 16px;
+	color: var(--lyrics-color);
+}
+
+.kp-song-artist {
+	font-weight: 700;
+}
+
+.kp-song-title {
+	font-weight: 400;
+}
+
+.kp-player-wrapper {
+	position: relative;
+	width: 100%;
+	height: auto;
+	display: flex;
+	flex-direction: row;
+	background: var(--player-color);
+}
+
+.kp-cover {
+	position: relative;
+	width: 48px;
+	height: 48px;
+	background: var(--cover-color);
+}
+
+.kp-player-controls {
+	position: relative;
+	width: 100%;
+	padding: 16px;
+	display: flex;
+	flex-wrap: nowrap;
+	flex-direction: row;
+	justify-content: flex-start;
+	align-items: center;
+	gap: 16px;
+}
+
+.kp-button {
+	position: relative;
+	width: 16px;
+	height: 16px;
+	padding: 0;
+	margin: 0;
+	border: none;
+	outline: none;
+	box-shadow: none;
+	cursor: pointer;
+	flex: 0 0 auto;
+	background: transparent;
+}
+
+.kp-button svg {
+	position: relative;
+	width: 100%;
+	fill: var(--buttons-color);
+}
+
+.kp-button:focus-visible svg,
+.kp-button:hover svg {
+	fill: var(--buttons-hover-color);
+}
+
+.kp-button.kp-active svg,
+.kp-button:active svg {
+	fill: var(--buttons-active-color);
+}
+
+.kp-seek {
+	position: relative;
+	width: 100%;
+	height: 12px;
+	border: none;
+	outline: none;
+	box-shadow: none;
+	background: var(--seek-color);
+	cursor: pointer;
+}
+
+.kp-buffered {
+	position: absolute;
+	width: 75%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	background: var(--buffered-color);
+}
+
+.kp-progress {
+	position: absolute;
+	width: 50%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	background: var(--progress-color);
+}
+
+.kp-time-wrapper {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	padding: 4px;
+	top: 0;
+	left: 0;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.kp-current-time,
+.kp-duration {
+	position: relative;
+	font-family: "Inter", sans-serif;
+	font-size: 8px;
+	font-weight: 600;
+	line-height: 8px;
+	color: var(--time-color);
+}
+
+.kp-playlist-wrapper {
+	position: relative;
+	width: 100%;
+	height: auto;
+}
+
+.kp-playlist {
+	position: relative;
+	width: 100%;
+	height: auto;
+}
+
+.kp-playlist-item {
+	position: relative;
+	width: 100%;
+	height: auto;
+	display: flex;
+	flex-direction: row;
+	justify-content: start;
+	align-items: center;
+	box-shadow: inset 0 -1px 0 0 var(--playlist-divider-color);
+	background: var(--playlist-background);
+	cursor: pointer;
+}
+
+.kp-playlist-item.kp-active {
+	background: var(--playlist-active-background);
+	box-shadow: inset 0 -1px 0 0 var(--playlist-active-divider-color);
+}
+
+.kp-playlist-item:hover {
+	background: var(--playlist-hover-background);
+	box-shadow: inset 0 -1px 0 0 var(--playlist-hover-divider-color);
+}
+
+.kp-playlist-indicator {
+	position: relative;
+	width: 32px;
+	height: 32px;
+}
+
+.kp-playlist-bar {
+	position: absolute;
+	width: 6px;
+	height: 6px;
+	top: 50%;
+	left: 50%;
+	background: var(--playlist-color);
+	border-radius: 4px;
+	transform: translate(-50%, -50%);
+}
+
+.kp-playlist-item:hover .kp-playlist-bar {
+	background: var(--playlist-hover-color);
+}
+
+.kp-playlist-item.kp-active .kp-playlist-bar {
+	background: var(--playlist-active-color);
+}
+
+.kp-playlist-song {
+	font-family: "Inter", sans-serif;
+	font-size: 12px;
+	line-height: 12px;
+	font-weight: 400;
+	color: var(--playlist-color);
+}
+
+.kp-playlist-song b {
+	font-weight: 700;
+}
+
+.kp-playlist-item:hover .kp-playlist-song {
+	color: var(--playlist-hover-color);
+}
+
+.kp-playlist-item.kp-active .kp-playlist-song {
+	color: var(--playlist-active-color);
+}
