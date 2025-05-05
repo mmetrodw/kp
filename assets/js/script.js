@@ -77,6 +77,17 @@ class kPlayer {
 		this.addClass(playerWrapper, 'kp-player-wrapper');
 		wrapper.appendChild(playerWrapper);
 
+    const coverWaper = document.createElement('div');
+    this.addClass(coverWaper, 'kp-cover');
+    playerWrapper.appendChild(coverWaper);
+    
+    const playerControls = document.createElement('div');
+    this.addClass(playerControls, 'kp-player-controls');
+    playerWrapper.appendChild(playerControls);
+    
+    this.uiElements.prevButton = this.createButton('kp-prev')
+    playerControls.appendChild(this.uiElements.prevButton);
+    
 	}
 
 	buildPlaylistPanel() {
@@ -115,7 +126,13 @@ class kPlayer {
 
 			this.uiElements.playlistContainer.appendChild(playlistItem);
 		});
-
+	}
+	
+	createButton(className) {
+	  const button = document.createElement('button');
+		button.setAttribute('type', 'button');
+	  this.addClass(button, ['kp-button', className]);
+	  return button;
 	}
 
 	/* UTILS */
