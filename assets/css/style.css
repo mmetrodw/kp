@@ -41,6 +41,11 @@ body {
 	box-sizing: border-box;
 }
 
+.kp-wrapper.kp-rounded {
+	border-radius: 4px;
+	overflow: hidden;
+}
+
 .kp-lyrics-wrapper {
 	position: relative;
 	width: 100%;
@@ -195,6 +200,11 @@ body {
 	cursor: pointer;
 }
 
+.kp-rounded .kp-seek {
+	border-radius: 4px;
+	overflow: hidden;
+}
+
 .kp-buffered {
 	position: absolute;
 	width: 75%;
@@ -234,6 +244,37 @@ body {
 	font-weight: 600;
 	line-height: 8px;
 	color: var(--time-color);
+}
+
+.kp-volume-wrapper {
+	position: relative;
+	width: 124px;
+	height: auto;
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-start;
+	align-items: center;
+	gap: 8px;
+	overflow: hidden;
+}
+
+.kp-volume-seek {
+	position: relative;
+	width: 100px;
+	height: 4px;
+	background: var(--seek-color);
+	overflow: hidden;
+}
+
+.kp-rounded .kp-volume-seek {
+	border-radius: 4px;
+}
+
+.kp-volume-value {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	background: var(--progress-color);
 }
 
 .kp-playlist-wrapper {
