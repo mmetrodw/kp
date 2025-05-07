@@ -39,17 +39,19 @@ class kPlayer {
 		this.target = options.target;
 		this.playlist = options.playlist;
 		this.settings = options.options ? this.deepObjectMerge(DefaultOptionsKP.options, options.options) : DefaultOptionsKP.options;
-		this.isSingle = this.playlist.length === 1;
+		this.isPlaylist = this.playlist.length > 1;
 		this.uiElements = {};
+		this.audio = new Audio();
 		console.log('work');
 
-		this.checkError();
+		this.validatePlayerConfig();
 		this.buildUI();
+		this.addEventListeners();
 
 		console.log(this);
   }
 
-	checkError() {
+	validatePlayerConfig() {
 		const { target, playlist } = this;
 
 		if(!target) {
@@ -82,7 +84,6 @@ class kPlayer {
 		this.buildPlaylistPanel();
 	}
 
-
 	buildLyricsPanel() {
 		const { wrapper } = this.uiElements;
 
@@ -109,7 +110,8 @@ class kPlayer {
 
 	buildPlayerPanel() {
 		const { wrapper } = this.uiElements;
-		const { isSingle, settings } = this;
+		const { isPlaylist, settings } = this;
+		const isMobileDevice = this.isMobileDevice();
 		const icons = settings.rounded ? iconsLib.rounded : iconsLib.default;
 
 		const playerWrapper = document.createElement('div');
@@ -124,7 +126,7 @@ class kPlayer {
     this.addClass(playerControls, 'kp-player-controls');
     playerWrapper.appendChild(playerControls);
     
-		if(!isSingle) {
+		if(isPlaylist) {
 			this.uiElements.prevButton = this.createButton('kp-prev', icons.prev);
 			playerControls.appendChild(this.uiElements.prevButton);
 		}
@@ -132,7 +134,7 @@ class kPlayer {
     this.uiElements.playbackButton = this.createButton('kp-playback', icons.playback.play);
     playerControls.appendChild(this.uiElements.playbackButton);
     
-		if(!isSingle) {
+		if(isPlaylist) {
 			this.uiElements.nextButton = this.createButton('kp-next', icons.next);
 			playerControls.appendChild(this.uiElements.nextButton);
 		}
@@ -162,21 +164,23 @@ class kPlayer {
 		this.uiElements.duration.innerHTML = '00:00';
 		timeWrapper.appendChild(this.uiElements.duration);
 
-		const volumeWrapper = document.createElement('div');
-		this.addClass(volumeWrapper, 'kp-volume-wrapper');
-		playerControls.appendChild(volumeWrapper);
+		if(!isMobileDevice) {
+			const volumeWrapper = document.createElement('div');
+			this.addClass(volumeWrapper, 'kp-volume-wrapper');
+			playerControls.appendChild(volumeWrapper);
+	
+			this.uiElements.volumeButton = this.createButton('kp-volume-button', icons.volume);
+			volumeWrapper.appendChild(this.uiElements.volumeButton);
+	
+			const volumeSeek = document.createElement('div');
+			this.addClass(volumeSeek, 'kp-volume-seek');
+			const volumeValue = document.createElement('div');
+			this.addClass(volumeValue, 'kp-volume-value');
+			volumeSeek.appendChild(volumeValue);
+			volumeWrapper.appendChild(volumeSeek);
+		}
 
-    this.uiElements.volumeButton = this.createButton('kp-volume-button', icons.volume);
-    volumeWrapper.appendChild(this.uiElements.volumeButton);
-
-		const volumeSeek = document.createElement('div');
-		this.addClass(volumeSeek, 'kp-volume-seek');
-		const volumeValue = document.createElement('div');
-		this.addClass(volumeValue, 'kp-volume-value');
-		volumeSeek.appendChild(volumeValue);
-		volumeWrapper.appendChild(volumeSeek);
-
-		if(!isSingle) {
+		if(isPlaylist) {
 			this.uiElements.playlistButton = this.createButton('kp-playlist-button', icons.playlist.closed);
 			playerControls.appendChild(this.uiElements.playlistButton);
 		}
@@ -184,9 +188,9 @@ class kPlayer {
 
 	buildPlaylistPanel() {
 		const { wrapper } = this.uiElements;
-		const { playlist, isSingle } = this;
+		const { playlist, isPlaylist } = this;
 		
-		if(isSingle) return;
+		if(!isPlaylist) return;
 
 		const playlistWrapper = document.createElement('div');
 		this.addClass(playlistWrapper, 'kp-playlist-wrapper');
@@ -241,6 +245,36 @@ class kPlayer {
 		path.setAttribute('d', iconPath);
 		icon.appendChild(path);
 		return icon;
+	}
+
+	addEventListeners() {
+		const { isPlaylist } = this;
+		this.uiElements.playbackButton.addEventListener('click', () => {
+			console.log("playback toggle");
+		});
+
+		if(isPlaylist) {
+			this.uiElements.prevButton.addEventListener('click', () => {
+				console.log("prev");
+			});
+
+			this.uiElements.nextButton.addEventListener('click', () => {
+				console.log("next");
+			});
+
+			this.uiElements.playlistButton.addEventListener('click', () => {
+				console.log("Playlist Toggle");
+			});
+		}
+
+		this.uiElements.volumeButton.addEventListener('click', () => {
+			if(this.uiElements.volumeButton.parentNode.classList.contains('kp-volume-open')) {
+				this.removeClass(this.uiElements.volumeButton.parentNode, 'kp-volume-open');
+			} else {
+				this.addClass(this.uiElements.volumeButton.parentNode, 'kp-volume-open');
+			}
+			console.log("Volume Toggle");
+		});
 	}
 
 	/* UTILS */

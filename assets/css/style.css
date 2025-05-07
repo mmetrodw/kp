@@ -19,7 +19,7 @@ body {
 	--buttons-hover-color: #06BCBA;
 	--buttons-active-color: #06BCBA;
 	--seek-color: #252A34;
-	--buffered-color: red;
+	--buffered-color: rgba(255, 255, 255, 0.1);
 	--progress-color: #06BCBA;
 	--time-color: #EAEAEA;
 
@@ -171,6 +171,7 @@ body {
 	cursor: pointer;
 	flex: 0 0 auto;
 	background: transparent;
+	flex: 0 0 auto;
 }
 
 .kp-button svg {
@@ -207,20 +208,43 @@ body {
 
 .kp-buffered {
 	position: absolute;
-	width: 75%;
+	width: 0%;
 	height: 100%;
 	top: 0;
 	left: 0;
 	background: var(--buffered-color);
+	pointer-events: none;
+	background: linear-gradient(
+    -45deg,
+    var(--buffered-color) 25%,
+    transparent 25%,
+    transparent 50%,
+    var(--buffered-color) 50%,
+    var(--buffered-color) 75%,
+    transparent 75%,
+    transparent
+  );
+	background-size: 32px 32px;
+	animation: kp-move-buffered 1.5s linear infinite;
+}
+
+@keyframes kp-move-buffered {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 32px 32px;
+  }
 }
 
 .kp-progress {
 	position: absolute;
-	width: 50%;
+	width: 0%;
 	height: 100%;
 	top: 0;
 	left: 0;
 	background: var(--progress-color);
+	pointer-events: none;
 }
 
 .kp-time-wrapper {
@@ -234,6 +258,7 @@ body {
 	flex-direction: row;
 	justify-content: space-between;
 	align-items: center;
+	pointer-events: none;
 }
 
 .kp-current-time,
@@ -248,7 +273,7 @@ body {
 
 .kp-volume-wrapper {
 	position: relative;
-	width: 124px;
+	width: 16px;
 	height: auto;
 	display: flex;
 	flex-direction: row;
@@ -256,6 +281,12 @@ body {
 	align-items: center;
 	gap: 8px;
 	overflow: hidden;
+	flex: 0 0 auto;
+	transition: all 250ms cubic-bezier(.25, 0, 0, 1);
+}
+
+.kp-volume-wrapper.kp-volume-open {
+	width: 124px;
 }
 
 .kp-volume-seek {
@@ -264,6 +295,7 @@ body {
 	height: 4px;
 	background: var(--seek-color);
 	overflow: hidden;
+	cursor: pointer;
 }
 
 .kp-rounded .kp-volume-seek {
@@ -272,9 +304,10 @@ body {
 
 .kp-volume-value {
 	position: relative;
-	width: 100%;
+	width: 0%;
 	height: 100%;
 	background: var(--progress-color);
+	pointer-events: none;
 }
 
 .kp-playlist-wrapper {
@@ -286,7 +319,8 @@ body {
 .kp-playlist {
 	position: relative;
 	width: 100%;
-	height: auto;
+	height: 0px;
+	overflow: hidden;
 }
 
 .kp-playlist-item {
