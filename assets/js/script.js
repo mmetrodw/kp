@@ -3,6 +3,7 @@ const DefaultOptionsKP = {
 	playlist: null,
 	options: {
 		rounded: false,
+		volume: 1
 	}
 };
 const iconsLib = {
@@ -42,11 +43,93 @@ class kPlayer {
 		this.isPlaylist = this.playlist.length > 1;
 		this.uiElements = {};
 		this.audio = new Audio();
+		this.currentSong = 0;
 		console.log('work');
+		
+		// Player State
+		this.playerState = {
+			_allowSeeking: false,
+			_audioEvent: null,
+			_autoplay: false,
+			_log: null,
+			_volumeToggle: false,
+			_isLoading: false,
+			_isMobile: this.isMobileDevice(),
+			_isPlaylist: null,
+			_isPlaylistDisplayed: false,
+			_isUserAdjustingVolume: false,
+			_isUserSeekingAudio: false,
+		
+			get allowSeeking() { return this._allowSeeking;	},
+			get audioEvent() { return this._audioEvent;	},
+			get autoplay() { return this._autoplay;	},
+			get log() { return this._log;	},
+			get volumeToggle() { return this._volumeToggle;	},
+			get isLoading() { return this._isLoading; },
+			get isMobile() { return this._isMobile; },
+			get isPlaylist() { return this._isPlaylist; },
+			get isPlaylistDisplayed() { return this._isPlaylistDisplayed; },
+			get isUserAdjustingVolume() { return this._isUserAdjustingVolume; },
+			get isUserSeekingAudio() { return this._isUserSeekingAudio; },
+		
+			set allowSeeking(value) {
+				if(this._allowSeeking !== value) {
+					this._allowSeeking = value;
+					this.handleAllowSeekingChange(value);
+				}
+			},
+			set audioEvent(value) {
+				if(this._audioEvent !== value) {
+					this._audioEvent = value;
+					this._log = `Audio Event: ${this._audioEvent}`;
+					this.handlePlayerLog(this._log)
+				}
+			},
+			set autoplay(value) { this._autoplay = value;	},
+			set log(value) {
+				if(this._log !== value) {
+					this._log = value;
+					this.handlePlayerLog(value);
+				}
+			},
+			set volumeToggle(value) { this._volumeToggle = value; },
+			set isLoading(value) {
+				if(this._isLoading !== value) {
+					this._isLoading = value;
+					this.handleIsLoadingChange(value);
+				}
+			},
+			set isMobile(value) { this._isMobile = value; },
+			set isPlaylist(value) { this._isPlaylist = value; },
+			set isPlaylistDisplayed(value) { this._isPlaylistDisplayed = value; },
+			set isUserAdjustingVolume(value) { this._isUserAdjustingVolume = value; },
+			set isUserSeekingAudio(value) { this._isUserSeekingAudio = value; },
+		
+			handlePlayerLog: (log) => {
+				const enable = true;
+				if(enable) {
+					console.log(log);
+				}
+			},
+			handleAllowSeekingChange: (state) => {
+				this.uiElements.seek.style.pointerEvents = state && this.audio.duration !== Infinity ? "all" : "none";
+			},
+			handleIsLoadingChange: (state) => {
+				const { addClass, removeClass } = this;
+				if(state) {
+					// Add the loading class to the player UI
+					addClass(this.uiElements.wrapper, 'tp-loading');
+				} else {
+					// Remove the loading class from the player UI
+					removeClass(this.uiElements.wrapper, 'tp-loading');
+				}
+			},
+		};
 
 		this.validatePlayerConfig();
 		this.buildUI();
 		this.addEventListeners();
+		this.loadSong();
 
 		console.log(this);
   }
@@ -172,12 +255,12 @@ class kPlayer {
 			this.uiElements.volumeButton = this.createButton('kp-volume-button', icons.volume);
 			volumeWrapper.appendChild(this.uiElements.volumeButton);
 	
-			const volumeSeek = document.createElement('div');
-			this.addClass(volumeSeek, 'kp-volume-seek');
-			const volumeValue = document.createElement('div');
-			this.addClass(volumeValue, 'kp-volume-value');
-			volumeSeek.appendChild(volumeValue);
-			volumeWrapper.appendChild(volumeSeek);
+			this.uiElements.volumeSeek = document.createElement('div');
+			this.addClass(this.uiElements.volumeSeek, 'kp-volume-seek');
+			this.uiElements.volumeValue = document.createElement('div');
+			this.addClass(this.uiElements.volumeValue, 'kp-volume-value');
+			this.uiElements.volumeSeek.appendChild(this.uiElements.volumeValue);
+			volumeWrapper.appendChild(this.uiElements.volumeSeek);
 		}
 
 		if(isPlaylist) {
@@ -225,6 +308,7 @@ class kPlayer {
 
 			this.uiElements.playlistContainer.appendChild(playlistItem);
 		});
+		this.uiElements.playlistItems = this.uiElements.playlistContainer.querySelectorAll('.kp-playlist-item');
 	}
 	
 	createButton(className, iconPath) {
@@ -249,8 +333,17 @@ class kPlayer {
 
 	addEventListeners() {
 		const { isPlaylist } = this;
+
 		this.uiElements.playbackButton.addEventListener('click', () => {
-			console.log("playback toggle");
+			if (this.audio.paused) {
+				// Play the audio and set autoplay to true
+				this.audio.play();
+				this.playerState.autoplay = true;
+			} else {
+				// Pause the audio and set autoplay to false
+				this.audio.pause();
+				this.playerState.autoplay = false;
+			}
 		});
 
 		if(isPlaylist) {
@@ -275,6 +368,274 @@ class kPlayer {
 			}
 			console.log("Volume Toggle");
 		});
+
+		// Add listeners for all audio events
+		this.setupAudioEventListeners();
+	}
+
+	setupAudioEventListeners() {
+		const audioEvents = [
+			'abort', 'canplay', 'canplaythrough', 'durationchange', 'emptied', 'ended', 'error',
+			'loadeddata', 'loadedmetadata', 'loadstart', 'pause', 'play', 'playing', 'progress',
+			'ratechange', 'seeked', 'seeking', 'stalled', 'suspend', 'timeupdate', 'volumechange', 'waiting'
+		];
+
+		audioEvents.forEach(event => {
+			if (typeof this[event] === 'function') {
+				this.audio.addEventListener(event, this[event].bind(this));
+			} else {
+				console.log(`No handler found for event: ${event}`);
+			}
+		});
+	}
+
+	
+	/* AUDIO EVENTS */ 
+	abort() {
+		// Forbid Seeking
+		this.playerState.allowSeeking = false;
+		// Set Audio Event
+		this.playerState.audioEvent = 'abort';
+	}
+	
+	canplay() {
+		// Set loading status to false
+		this.playerState.isLoading = false;
+		// Allow Seeking
+		this.playerState.allowSeeking = true;
+		this.playerState.audioEvent = 'canplay';
+	}
+	
+	canplaythrough() {
+		// Set loading status to false
+		this.playerState.isLoading = false;
+		// Allow Seeking
+		this.playerState.allowSeeking = true;
+		// Start playback if autoplay is enabled
+		if (this.playerState.autoplay) this.audio.play();
+		// Set Audio Event
+		this.playerState.audioEvent = 'canplaythrough';
+	}
+	
+	durationchange() {
+		const { duration } = this.uiElements;
+		const { secondsToTimecode } = this;
+		// Update the duration display in the UI
+		duration.textContent = secondsToTimecode(this.audio.duration);
+		// Allow Seeking
+		this.playerState.allowSeeking = true;
+		// Set Audio Event
+		this.playerState.audioEvent = 'durationchange';
+	}
+	
+	emptied() {
+		// Forbid Seeking
+		this.playerState.allowSeeking = false;
+		// Set Audio Event
+		this.playerState.audioEvent = 'emptied';
+	}
+	
+	// Ended
+	ended() {
+		// Play Next
+		this.handleNextSong();
+		// Set Audio Event
+		this.playerState.audioEvent = 'ended';
+	}
+	
+	error() {
+		const { addClass } = this;
+		// Forbid Seeking
+		this.playerState.allowSeeking = false;
+		// Set loading status to false
+		this.playerState.isLoading = false;
+	
+		// Define error messages for different error codes
+		const errorCodes = {
+			1: 'The user canceled the audio.',
+			2: 'A network error occurred while fetching the audio.',
+			3: 'An error occurred while decoding the audio.',
+			4: 'The audio is missing or is in a format not supported by your browser.',
+			default: 'An unknown error occurred.'
+		};
+	
+		// Get the error message based on the error code
+		const errorCode = errorCodes[this.audio.error.code] || errorCodes['default'];
+		// Add the 'error' class to the player UI
+		addClass(this.uiElements.wrapper, 'kp-error');
+		// Show the error message
+		console.error("tPlayer Error: " + errorCode);
+		// Pause the audio
+		this.pause();
+		// Disable autoplay
+		this.playerState.autoplay = false;
+		// Set Audio Event
+		this.playerState.audioEvent = 'error';
+		return false;
+	}
+	
+	loadstart() {
+		// Set loading status to true
+		this.playerState.isLoading = true;
+		// Set Audio Event
+		this.playerState.audioEvent = 'loadstart';
+	}
+	
+	loadeddata() {
+		// Allow Seeking
+		this.playerState.allowSeeking = true;
+		// Set loading status to false
+		this.playerState.isLoading = false;
+		// Set Audio Event
+		this.playerState.audioEvent = 'loadeddata';
+	}
+	
+	loadedmetadata() {
+		const { secondsToTimecode } = this;
+		const { duration } = this.uiElements;
+		// Update the duration display in the UI
+		duration.textContent = secondsToTimecode(this.audio.duration);
+		// Allow Seeking
+		this.playerState.allowSeeking = true;
+		// Set loading status to false
+		this.playerState.isLoading = false;
+		// Set Audio Event
+		this.playerState.audioEvent = 'loadedmetadata';
+	}
+	
+	pause() {
+		const { playlistItems, playbackButton } = this.uiElements;
+		const { removeClass, settings } = this;
+		const icons = settings.rounded ? iconsLib.rounded : iconsLib.default;
+		// Remove the 'playing' class from playlist items
+		removeClass(playlistItems, 'kp-playing');
+		// Remove the 'active' class from the playback button
+		removeClass(playbackButton, 'kp-active');
+		// Update the playback button icon to 'play'
+		playbackButton.querySelector('path').setAttribute('d', icons.playback.play);
+		// Set Audio Event
+		this.playerState.audioEvent = 'pause';
+	}
+	
+	play() {
+		const { playlistItems, playbackButton } = this.uiElements;
+		const { addClass, settings } = this;
+		const icons = settings.rounded ? iconsLib.rounded : iconsLib.default;
+		// Add the 'playing' class to the current playlist item, if it's Playlist
+		if(this.isPlaylist) addClass(playlistItems[this.currentSong], 'kp-playing');
+		// Add the 'active' class to the playback button
+		addClass(playbackButton, 'kp-active');
+		// Update the playback button icon to 'pause'
+		console.log(icons)
+		playbackButton.querySelector('path').setAttribute('d', icons.playback.pause);
+		// Allow Seeking
+		this.playerState.allowSeeking = true;
+		// Set Audio Event
+		this.playerState.audioEvent = 'play';
+	}
+	
+	playing() {
+		// Set loading status to false
+		this.playerState.isLoading = false;
+		// Allow Seeking
+		this.playerState.allowSeeking = true;
+		// Set Audio Event
+		this.playerState.audioEvent = 'playing';
+	}
+	
+	progress() {
+		// Check if there are buffered data
+		if (this.audio.buffered.length) {
+			const duration = this.audio.duration;
+			const buffered = this.audio.buffered.end(this.audio.buffered.length - 1);
+			const progress = buffered / duration;
+			// Update the width of the buffered progress bar
+			this.uiElements.buffered.style.width = `${progress * 100}%`;
+			// Set the opacity of the buffered progress bar
+			this.uiElements.buffered.style.opacity = progress === 1 ? 0 : 1;
+		}
+		// Set Audio Event
+		this.playerState.audioEvent = 'progress';
+	}
+	
+	ratechange() {
+		// Set Audio Event
+		this.playerState.audioEvent = 'ratechange';
+	}
+	
+	seeked() {
+		// Set loading status to false
+		this.playerState.isLoading = false;
+		// Allow Seeking
+		this.playerState.allowSeeking = true;
+		// Set Audio Event
+		this.playerState.audioEvent = 'seeked';
+	}
+	
+	seeking() {
+		// Set loading status to true
+		this.playerState.isLoading = true;
+		// Forbid Seeking
+		this.playerState.allowSeeking = false;
+		// Set Audio Event
+		this.playerState.audioEvent = 'seeking';
+	}
+	
+	stalled() {
+		// Forbid Seeking
+		this.playerState.allowSeeking = false;
+		// Set loading status to true
+		this.playerState.isLoading = true;
+		// Log the stalled event
+		console.log('Playback stalled at', this.audio.currentTime);
+		// Set Audio Event
+		this.playerState.audioEvent = 'stalled';
+	}
+	
+	suspend() {
+		// Set Audio Event
+		this.playerState.audioEvent = 'suspend';
+	}
+	
+	timeupdate() {
+		const { secondsToTimecode } = this;
+		if (!this.playerState.isUserSeekingAudio) {
+			// Calculate the percentage of the song that has been played
+			const percent = (this.audio.currentTime / this.audio.duration) * 100;
+			// Update the width of the playback progress bar
+			this.uiElements.progress.style.width = percent + '%';
+			// Update the displayed current time in the player
+			this.uiElements.currentTime.textContent = secondsToTimecode(this.audio.currentTime);
+		}
+		// Set Audio Event
+		this.playerState.audioEvent = 'timeupdate';
+	}
+	
+	volumechange() {
+		const { volumeValue } = this.uiElements;
+		const { isMobile } = this.playerState;
+		this.settings.volume = this.audio.volume !== 0 ? this.audio.volume : this.settings.volume;
+	
+		if(!isMobile) {
+			volumeValue.style.width = `${this.audio.volume * 100}%`;
+		}
+	
+		// Set Audio Event
+		this.playerState.audioEvent = 'volumechange';
+	}
+	
+	waiting() {
+		// Set loading status to true
+		this.playerState.isLoading = true;
+		// Forbid Seeking
+		this.playerState.allowSeeking = false;
+		// Set Audio Event
+		this.playerState.audioEvent = 'waiting';
+	}
+
+	loadSong() {
+		this.audio.src = this.playlist[this.currentSong].src;
+		this.audio.load();
 	}
 
 	/* UTILS */
@@ -337,6 +698,25 @@ class kPlayer {
 				if (cls) element.classList.toggle(cls);
 			});
 		});
+	}
+	// Format Time
+	secondsToTimecode(totalSeconds) {
+		if(totalSeconds == Infinity) {
+			return "00:00";
+		}
+		totalSeconds = parseInt(totalSeconds, 10);
+		const h = Math.floor(totalSeconds / 3600);
+		const m = Math.floor(totalSeconds / 60) % 60;
+		const s = totalSeconds % 60;
+	
+		const timeArr = [h, m, s];
+		const formattedArr = timeArr.map(function(value) {
+			return value < 10 ? "0" + value : value;
+		});
+		const filteredArr = formattedArr.filter(function(value, index) {
+			return value !== "00" || index > 0;
+		});
+		return filteredArr.join(":");
 	}
 }
 
